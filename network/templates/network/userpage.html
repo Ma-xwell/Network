@@ -1,0 +1,34 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+{% block body %}
+    <h1>{{ user_general.username }} </h1>
+
+    {% if logged_user.username != user_general.username %}
+        <form action="{% url 'follow_user' user_general.username %}" method="POST">
+            {% csrf_token %}
+            {% if is_following %}
+                <input class="btn btn-danger" type="submit" value="Unfollow">
+            {% else %}
+                <input class="btn btn-success" type="submit" value="Follow">
+            {% endif %}
+        </form>
+    {% endif %}
+    
+    Number of posts: {{ posts.count }} <br>
+    Number of following: {{ user_general.following }} <br>
+    Number of following: {{ user_general.following }}
+    {% for post in posts %}
+        <div class="flex-column-reverse container border rounded">
+            <div class="p-1">{{ post.user_general.username }}</div>
+            <div class="p-1">{{ post.text }}</div>
+            <div class="p-1">{{ post.date }} </div>
+            <div class="p-1">
+                <button class="likebutton">
+                    <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
+                </button>
+                {{ post.likes }}
+            </div>
+        </div>
+        {% endfor %}
+{% endblock %}

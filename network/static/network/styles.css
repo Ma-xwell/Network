@@ -1,0 +1,19 @@
+.likebutton {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    outline: none;
+}
+
+.hearticon {
+    height: 15px;
+    width: auto;
+    transition: 100ms;
+}
+
+.hearticon:hover {
+    height: 18px;
+    width: auto;
+}

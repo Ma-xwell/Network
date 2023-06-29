@@ -1,5 +1,32 @@
 {% extends "network/layout.html" %}
+{% load static %}
 
 {% block body %}
-    TODO
+    <h1>All Posts</h1>
+    {% if user.is_authenticated %}
+        <div class="flex-column-reverse container border rounded">
+            <form action="{% url 'index' %}" method="POST">
+                {% csrf_token %}
+                <div class="p-1"><h3>New Post</h3></div>
+                <div class="p-1">{{ form.text }}</div>
+                <div class="p-1"><button class="btn btn-primary">Post</button></div>
+            </form>
+        </div>
+    {% endif %}
+
+    {% if posts %}
+        {% for post in posts %}
+        <div class="flex-column-reverse container border rounded">
+            <div class="p-1"><a href="{% url 'userpage' post.user.username %}">{{ post.user.username }}</a></div>
+            <div class="p-1">{{ post.text }}</div>
+            <div class="p-1">{{ post.date }} </div>
+            <div class="p-1">
+                <button class="likebutton">
+                    <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
+                </button>
+                {{ post.likes }}
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
 {% endblock %}
