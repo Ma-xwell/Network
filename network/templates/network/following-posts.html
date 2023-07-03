@@ -1,0 +1,27 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+{% block body %}
+
+    {% if following_number < 1 %}
+        <h1>You do not follow anyone!</h1>
+    
+    {% elif following_number > 0 and posts %}    
+        <h1>Posts from people you follow!</h1>
+        {% for post in posts %}
+            <div class="flex-column-reverse container border rounded">
+                <div class="p-1"><a href="{% url 'userpage' post.user.username %}">{{ post.user.username }}</a></div>
+                <div class="p-1">{{ post.text }}</div>
+                <div class="p-1">{{ post.date }} </div>
+                <div class="p-1">
+                    <button class="likebutton">
+                        <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
+                    </button>
+                    {{ post.likes }}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <h1>Your followers don't have any posts yet!</h1>
+    {% endif %}
+{% endblock %}

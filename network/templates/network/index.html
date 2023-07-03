@@ -1,7 +1,12 @@
 {% extends "network/layout.html" %}
 {% load static %}
 
+{% block head %}
+    <script src="{% static 'network/like-edit.js' %}"></script>
+{% endblock %}
+
 {% block body %}
+    
     <h1>All Posts</h1>
     {% if user.is_authenticated %}
         <div class="flex-column-reverse container border rounded">
@@ -17,14 +22,23 @@
     {% if posts %}
         {% for post in posts %}
         <div class="flex-column-reverse container border rounded">
+            <input type="hidden" class="post-id" value="{{ post.id }}">
             <div class="p-1"><a href="{% url 'userpage' post.user.username %}">{{ post.user.username }}</a></div>
-            <div class="p-1">{{ post.text }}</div>
+            <div class="p-1 post-content">{{ post.text }}</div>
             <div class="p-1">{{ post.date }} </div>
             <div class="p-1">
                 <button class="likebutton">
                     <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
                 </button>
                 {{ post.likes }}
+                
+            </div>
+            <div class="edit-area">
+                {% if user == post.user %}
+                    <button class="edit-post-button">
+                        EDIT
+                    </button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

@@ -1,23 +1,27 @@
 {% extends "network/layout.html" %}
 {% load static %}
 
+{% block head %}
+    <script src="{% static 'network/follow.js' %}"></script>
+    <script src="{% static 'network/like-edit.js' %}"></script>
+{% endblock %}
+
 {% block body %}
     <h1>{{ user_general.username }} </h1>
+    <input type="hidden" value="{{ is_following }}" id="hidden_is_following">
 
     {% if logged_user.username != user_general.username %}
-        <form action="{% url 'follow_user' user_general.username %}" method="POST">
-            {% csrf_token %}
-            {% if is_following %}
-                <input class="btn btn-danger" type="submit" value="Unfollow">
-            {% else %}
-                <input class="btn btn-success" type="submit" value="Follow">
-            {% endif %}
+        <form id="follow_form">
+        <input type="hidden" value="{{ user_general.username }}" id="hidden-user-general">
+            <input class="btn btn-success" type="hidden" value="Follow" id="follow_button">
         </form>
     {% endif %}
     
+    <div>
     Number of posts: {{ posts.count }} <br>
-    Number of following: {{ user_general.following }} <br>
-    Number of following: {{ user_general.following }}
+    Number of following: {{ user_general.following.count }} <br>
+    Number of followers: <span id="followers-count">{{ user_general.followers.count }}</span>
+    </div>
     {% for post in posts %}
         <div class="flex-column-reverse container border rounded">
             <div class="p-1">{{ post.user_general.username }}</div>

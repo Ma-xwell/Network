@@ -1,9 +1,13 @@
+import json
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from datetime import datetime
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import User, Post
 from .forms import NewPostForm
@@ -23,9 +27,22 @@ def index(request):
             "posts": Post.objects.all().order_by('-date'),
             "text_post": content
             })
+            
     return render(request, "network/index.html", {
         "posts": Post.objects.all().order_by('-date'),
         "form": NewPostForm()
+    })
+    
+    
+@login_required    
+def following_posts(request):
+    logged_user = User.objects.get(username=request.user.username)
+    following = logged_user.following.all()
+    followers_posts = Post.objects.filter(user__in=following).order_by('-date')
+
+    return render(request, "network/following-posts.html", {
+        "posts": followers_posts,
+        "following_number": following.count()
     })
 
 
@@ -98,25 +115,63 @@ def userpage(request, username):
             "is_following": is_following
         })
         
+@csrf_exempt      
+def get_number_of_followers(request, username):
+    if request.method == "POST":
+        user_general = User.objects.get(username=username)
+        number_of_followers = user_general.followers.count()
+        return JsonResponse({"followers": number_of_followers}, status=201)
+    else:
+        return JsonResponse({"error": "POST request required."}, status=400)
         
+@csrf_exempt        
 def follow_user(request, username):
     if request.method == "POST":
         logged_user = User.objects.get(username=request.user.username)
         user_general = User.objects.get(username=username)
         
-        if logged_user.following.filter(username=user_general.username).exists():
+        is_following = logged_user.following.filter(username=user_general.username).exists()
+        
+        if is_following:
             logged_user.following.remove(user_general)
             user_general.followers.remove(logged_user)
+            
         else:
             logged_user.following.add(user_general)
             user_general.followers.add(logged_user)
-    
-        return redirect('userpage', username=user_general.username)
-        # return render(request, "network/userpage.html", {
-        #     "user_general": user_general,
-        #     "logged_user": logged_user,
-        #     "posts": Post.objects.filter(user=user_general).order_by('-date'),
-        #     "is_following": is_following
-        # })
+
+        is_following = not is_following
+
+        return JsonResponse({"action": f"{'follow' if is_following else 'unfollow'}"}, status=201)
     else:
-        return HttpResponseRedirect(reverse("index"))
+        return JsonResponse({"error": "POST request required."}, status=400)
+    
+    
+@csrf_exempt
+@login_required
+def update_post(request, id):
+    if request.method == "POST":
+        logged_user = User.objects.get(username=request.user.username)
+        logged_user_posts = logged_user.post_set.all()
+        post = Post.objects.filter(id=id)
+        if post[0] in logged_user_posts:
+            new_text = request.body.decode('utf-8')
+            post.update(text=new_text)
+            return JsonResponse({"result": "Update successful"}, status=201)
+        return JsonResponse({"result": "Trying to edit other user's post"}, status=400)
+    else:
+        return JsonResponse({"error": "POST request required."}, status=400)
+    
+
+@csrf_exempt
+@login_required
+def get_new_post(request, id):
+    if request.method == "POST":
+        logged_user = User.objects.get(username=request.user.username)
+        logged_user_posts = logged_user.post_set.all()
+        post = Post.objects.filter(id=id)
+        if post[0] in logged_user_posts:
+            return JsonResponse({"updatedText": post[0].text}, status=201)
+        return JsonResponse({"updatedText": "Trying to edit other user's post"}, status=400)
+    else:
+        return JsonResponse({"error": "POST request required."}, status=400)
