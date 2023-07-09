@@ -41,5 +41,27 @@ $(function () {
             textarea.replaceWith(originalContent);
             editArea = $(this).closest(".edit-area").html(originalEditArea);
         })
+    });
+
+    $(document).on('click','.likebutton', function () {
+        var postID = $(this).closest('.flex-column-reverse').find('.post-id').val();
+        var likeCounter = $(this).closest('.flex-column-reverse').find('.like-counter');
+        var currentUrl = window.location.href;
+        var segmentsUrl = currentUrl.split('/');
+        var baseUrl = segmentsUrl[0] + '//' + segmentsUrl[2] + '/';
+
+        $.ajax({
+            url: `${baseUrl}like-post/${postID}`,
+            method: 'POST'
+        })
+        .done(function() {
+            $.ajax({
+                url: `${baseUrl}get-number-of-likes/${postID}`,
+                method: 'POST'
+            })
+            .done(function(data){
+                likeCounter.replaceWith(`<div class="like-counter">${data.likes}</div>`);
+            })
+        })
     })
 })

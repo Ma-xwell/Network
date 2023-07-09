@@ -11,7 +11,8 @@ class User(AbstractUser):
     number_of_following = models.PositiveIntegerField(default=0)
     followers = models.ManyToManyField('self', symmetrical=False, related_name="user_followers")
     following = models.ManyToManyField('self', symmetrical=False, related_name="user_following")
- 
+    liked_posts = models.ManyToManyField('Post', symmetrical=False, related_name="user_liked")
+
 
 class Post(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)

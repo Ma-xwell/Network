@@ -20,7 +20,7 @@
     {% endif %}
 
     {% if posts %}
-        {% for post in posts %}
+        {% for post in page_obj %}
         <div class="flex-column-reverse container border rounded">
             <input type="hidden" class="post-id" value="{{ post.id }}">
             <div class="p-1"><a href="{% url 'userpage' post.user.username %}">{{ post.user.username }}</a></div>
@@ -30,8 +30,9 @@
                 <button class="likebutton">
                     <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
                 </button>
-                {{ post.likes }}
-                
+                <div class="like-counter">
+                    {{ post.likes }}
+                </div>
             </div>
             <div class="edit-area">
                 {% if user == post.user %}
@@ -42,5 +43,22 @@
             </div>
         </div>
         {% endfor %}
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
     {% endif %}
 {% endblock %}

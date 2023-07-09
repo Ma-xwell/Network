@@ -1,37 +1,64 @@
-import json
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.urls import reverse
 from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 
 from .models import User, Post
 from .forms import NewPostForm
+
+# def listing(request):
+#     contact_list = Contact.objects.all()
+#     paginator = Paginator(contact_list, 25) # Show 25 contacts per page.
+
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+#     return render(request, 'list.html', {'page_obj': page_obj})
 
 def index(request):
     if request.method == "POST":
         form = NewPostForm(request.POST)
         if form.is_valid():
-            print("TEST")
             user = request.user
             content = form.cleaned_data['text']
             new_post = Post(user=user, text=content, date=datetime.now())
             new_post.save()
             
-            return render(request, "network/index.html", {
-            "form": NewPostForm(),
-            "posts": Post.objects.all().order_by('-date'),
-            "text_post": content
+            posts = Post.objects.all().order_by('-date')
+            paginator = Paginator(posts, 10)
+            page_number = request.GET.get('page')
+            page_obj = paginator.get_page(page_number)
+            return render(request, 'network/index.html', {
+                "form": NewPostForm(),
+                "page_obj": page_obj,
+                "text_post": content,
+                "posts": posts
             })
             
-    return render(request, "network/index.html", {
-        "posts": Post.objects.all().order_by('-date'),
-        "form": NewPostForm()
-    })
+            # return render(request, "network/index.html", {
+            # "form": NewPostForm(),
+            # "posts": Post.objects.all().order_by('-date'),
+            # "text_post": content
+            # })
+            
+    posts = Post.objects.all().order_by('-date')
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'network/index.html', {
+        "form": NewPostForm(),
+        "page_obj": page_obj,
+        "posts": posts
+    })       
+    # return render(request, "network/index.html", {
+    #     "posts": Post.objects.all().order_by('-date'),
+    #     "form": NewPostForm()
+    # })
     
     
 @login_required    
@@ -39,8 +66,12 @@ def following_posts(request):
     logged_user = User.objects.get(username=request.user.username)
     following = logged_user.following.all()
     followers_posts = Post.objects.filter(user__in=following).order_by('-date')
+    paginator = Paginator(followers_posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, "network/following-posts.html", {
+        "page_obj": page_obj,
         "posts": followers_posts,
         "following_number": following.count()
     })
@@ -103,16 +134,25 @@ def userpage(request, username):
         return HttpResponseRedirect(reverse("index"))
     else:
         user_general = User.objects.get(username=username)
-        logged_user = User.objects.get(username=request.user.username)
         posts = Post.objects.filter(user=user_general).order_by('-date')
-        
-        is_following = logged_user.following.filter(username=user_general.username).exists()
+        paginator = Paginator(posts, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
 
+        if request.user.username:
+            logged_user = User.objects.get(username=request.user.username)
+            is_following = logged_user.following.filter(username=user_general.username).exists()
+            return render(request, "network/userpage.html", {
+                "page_obj": page_obj,
+                "user_general": user_general,
+                "logged_user": request.user,
+                "posts": posts,
+                "is_following": is_following
+            })
         return render(request, "network/userpage.html", {
+            "page_obj": page_obj,
             "user_general": user_general,
-            "logged_user": request.user,
-            "posts": posts,
-            "is_following": is_following
+            "posts": posts
         })
         
 @csrf_exempt      
@@ -175,3 +215,40 @@ def get_new_post(request, id):
         return JsonResponse({"updatedText": "Trying to edit other user's post"}, status=400)
     else:
         return JsonResponse({"error": "POST request required."}, status=400)
+
+
+@csrf_exempt
+@login_required
+def like_post(request, id):
+    if request.method == "POST":
+        logged_user = User.objects.get(username=request.user.username)
+        post = Post.objects.get(id=id)
+        logged_user_liked_posts = logged_user.liked_posts.all()
+        if post in logged_user_liked_posts:
+            logged_user.liked_posts.remove(post)
+            post.likes -= 1
+        else:
+            logged_user.liked_posts.add(post)
+            post.likes += 1
+        post.save()
+        return JsonResponse({"like": "success"}, status=201)
+    else:
+        return JsonResponse({"error": "POST request required."}, status=400)
+
+
+@csrf_exempt
+@login_required
+def get_number_of_likes(request, id):
+    if request.method == "POST":
+        post = Post.objects.get(id=id)
+        return JsonResponse({"likes": post.likes}, status=201)
+    else:
+        return JsonResponse({"error": "POST request required."}, status=400)
+    
+# def listing(request):
+#     contact_list = Contact.objects.all()
+#     paginator = Paginator(contact_list, 25) # Show 25 contacts per page.
+
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+#     return render(request, 'list.html', {'page_obj': page_obj})

@@ -10,7 +10,7 @@
     <h1>{{ user_general.username }} </h1>
     <input type="hidden" value="{{ is_following }}" id="hidden_is_following">
 
-    {% if logged_user.username != user_general.username %}
+    {% if logged_user.username != user_general.username and logged_user%}
         <form id="follow_form">
         <input type="hidden" value="{{ user_general.username }}" id="hidden-user-general">
             <input class="btn btn-success" type="hidden" value="Follow" id="follow_button">
@@ -22,17 +22,39 @@
     Number of following: {{ user_general.following.count }} <br>
     Number of followers: <span id="followers-count">{{ user_general.followers.count }}</span>
     </div>
-    {% for post in posts %}
-        <div class="flex-column-reverse container border rounded">
-            <div class="p-1">{{ post.user_general.username }}</div>
-            <div class="p-1">{{ post.text }}</div>
-            <div class="p-1">{{ post.date }} </div>
-            <div class="p-1">
-                <button class="likebutton">
-                    <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
-                </button>
-                {{ post.likes }}
+    {% if posts %}
+        {% for post in page_obj %}
+            <div class="flex-column-reverse container border rounded">
+                <input type="hidden" class="post-id" value="{{ post.id }}">
+                <div class="p-1">{{ post.user_general.username }}</div>
+                <div class="p-1">{{ post.text }}</div>
+                <div class="p-1">{{ post.date }} </div>
+                <div class="p-1">
+                    <button class="likebutton">
+                        <img class="hearticon" src="{% static 'network/media/heart.png' %}" alt="heart button">
+                    </button>
+                    <div class="like-counter">
+                        {{ post.likes }}
+                    </div>
+                </div>
             </div>
-        </div>
         {% endfor %}
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">&laquo; first</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+    {% endif %}
 {% endblock %}
